@@ -1,19 +1,8 @@
 // presentation/providers/product_provider.dart
 //
-// ViewModel da aplicação — coordena o ESTADO da UI.
-//
-// POR QUE O VIEWMODEL NÃO FAZ HTTP DIRETAMENTE?
-// O ViewModel não deve fazer chamadas HTTP porque isso violaria a separação de
-// responsabilidades: ele ficaria acoplado à infraestrutura de rede, impossibilitando
-// testar o estado da UI de forma isolada. Se a API mudar, o ViewModel também mudaria,
-// quebrando o princípio de responsabilidade única.
-//
-// Estados representados explicitamente:
-//   initial   → app recém aberto, nenhuma ação ainda
-//   loading   → requisição em andamento
-//   loaded    → dados disponíveis (da API)
-//   error     → falha sem dados de fallback
-//   stale     → falha mas com dados antigos do cache disponíveis
+// ViewModel da aplicação — coordena o estado de carregamento da UI.
+// Após carregar os produtos da API, notifica o FavoritesProvider
+// para que a lista de favoritos fique sempre atualizada.
 
 import 'package:flutter/foundation.dart';
 import '../../core/errors/app_error.dart';
@@ -21,19 +10,22 @@ import '../../data/repositories/product_repository_impl.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 
-/// Estado explícito da interface — cada tela sabe exatamente o que renderizar.
 enum ProductStatus { initial, loading, loaded, error, stale }
 
 class ProductProvider extends ChangeNotifier {
   final ProductRepository _repository;
+  // Callback para repassar produtos carregados ao FavoritesProvider
+  final void Function(List<Product>)? onProductsLoaded;
 
   ProductRepositoryImpl? get _repoImpl =>
       _repository is ProductRepositoryImpl
           ? _repository as ProductRepositoryImpl
           : null;
 
-  ProductProvider({required ProductRepository repository})
-      : _repository = repository;
+  ProductProvider({
+    required ProductRepository repository,
+    this.onProductsLoaded,
+  }) : _repository = repository;
 
   ProductStatus _status = ProductStatus.initial;
   List<Product> _products = [];
@@ -72,6 +64,7 @@ class ProductProvider extends ChangeNotifier {
       _usingCache = false;
       _cacheAge = null;
       _status = ProductStatus.loaded;
+      onProductsLoaded?.call(_products);
     } on AppError catch (e) {
       _error = e;
       final stale = _repoImpl?.cachedProducts;
@@ -80,6 +73,7 @@ class ProductProvider extends ChangeNotifier {
         _cacheAge = _repoImpl?.cacheAge;
         _usingCache = true;
         _status = ProductStatus.stale;
+        onProductsLoaded?.call(_products);
       } else {
         _products = [];
         _status = ProductStatus.error;

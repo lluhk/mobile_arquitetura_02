@@ -1,5 +1,7 @@
 // domain/entities/product.dart
-// Entidade de domínio — representa um produto sem detalhes de infraestrutura
+// Entidade de domínio — representa um produto da FakeStore API.
+// O campo [favorite] é mutável pois representa uma preferência local do usuário,
+// não um dado vindo da API.
 
 class Product {
   final int id;
@@ -10,8 +12,9 @@ class Product {
   final String imageUrl;
   final double ratingRate;
   final int ratingCount;
+  bool favorite;
 
-  const Product({
+  Product({
     required this.id,
     required this.title,
     required this.price,
@@ -20,5 +23,6 @@ class Product {
     required this.imageUrl,
     required this.ratingRate,
     required this.ratingCount,
+    this.favorite = false,
   });
 }

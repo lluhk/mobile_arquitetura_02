@@ -4,16 +4,25 @@
 
 import '../../domain/entities/product.dart';
 
-class ProductModel extends Product {
-  const ProductModel({
-    required super.id,
-    required super.title,
-    required super.price,
-    required super.description,
-    required super.category,
-    required super.imageUrl,
-    required super.ratingRate,
-    required super.ratingCount,
+class ProductModel {
+  final int id;
+  final String title;
+  final double price;
+  final String description;
+  final String category;
+  final String imageUrl;
+  final double ratingRate;
+  final int ratingCount;
+
+  ProductModel({
+    required this.id,
+    required this.title,
+    required this.price,
+    required this.description,
+    required this.category,
+    required this.imageUrl,
+    required this.ratingRate,
+    required this.ratingCount,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -30,7 +39,6 @@ class ProductModel extends Product {
     );
   }
 
-  /// Converte o modelo para a entidade pura de domínio.
   Product toEntity() => Product(
         id: id,
         title: title,

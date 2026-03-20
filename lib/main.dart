@@ -1,11 +1,6 @@
 // main.dart
 // Composition root — montagem do grafo de dependências.
-//
-// COMO A ARQUITETURA FACILITA TROCAR A API POR UM BANCO LOCAL?
-// Basta criar uma nova implementação de ProductRepository (ex: LocalProductRepository)
-// que usa SQLite ou Hive, e substituir aqui no main.dart.
-// Nenhum arquivo de domain, presentation ou core precisa ser alterado —
-// apenas esta linha de montagem muda.
+// Atividade 05: adicionado FavoritesProvider ao MultiProvider.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +11,7 @@ import 'data/datasources/product_remote_datasource.dart';
 import 'data/repositories/product_repository_impl.dart';
 import 'domain/repositories/product_repository.dart';
 import 'presentation/pages/product_list_page.dart';
+import 'presentation/providers/favorites_provider.dart';
 import 'presentation/providers/product_provider.dart';
 
 void main() {
@@ -28,9 +24,21 @@ void main() {
     cache: cache,
   );
 
+  // FavoritesProvider criado antes para ser referenciado no callback
+  final favoritesProvider = FavoritesProvider();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ProductProvider(repository: productRepository),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: favoritesProvider),
+        ChangeNotifierProvider(
+          create: (_) => ProductProvider(
+            repository: productRepository,
+            // Quando produtos carregam da API, repassa ao FavoritesProvider
+            onProductsLoaded: favoritesProvider.setProducts,
+          ),
+        ),
+      ],
       child: const MyApp(),
     ),
   );

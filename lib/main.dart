@@ -1,6 +1,9 @@
 // main.dart
 // Composition root — montagem do grafo de dependências.
-// Atividade 05: adicionado FavoritesProvider ao MultiProvider.
+//
+// Atividade 07: a aplicação agora inicia na HomePage.
+// Fluxo: HomePage → ProductListPage → ProductDetailPage
+// Conforme "Múltiplas Telas - Aula 1", seção 14.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +13,9 @@ import 'core/network/http_client.dart';
 import 'data/datasources/product_remote_datasource.dart';
 import 'data/repositories/product_repository_impl.dart';
 import 'domain/repositories/product_repository.dart';
+import 'presentation/pages/home_page.dart';
 import 'presentation/pages/product_list_page.dart';
+import 'presentation/pages/product_detail_page.dart';
 import 'presentation/providers/favorites_provider.dart';
 import 'presentation/providers/product_provider.dart';
 
@@ -24,7 +29,6 @@ void main() {
     cache: cache,
   );
 
-  // FavoritesProvider criado antes para ser referenciado no callback
   final favoritesProvider = FavoritesProvider();
 
   runApp(
@@ -34,7 +38,6 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => ProductProvider(
             repository: productRepository,
-            // Quando produtos carregam da API, repassa ao FavoritesProvider
             onProductsLoaded: favoritesProvider.setProducts,
           ),
         ),
@@ -56,7 +59,22 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
       ),
-      home: const ProductListPage(),
+      // Desafio opcional: rotas nomeadas centralizadas no MaterialApp
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const HomePage(),
+        '/products': (context) => const ProductListPage(),
+      },
+      // Rota de detalhes recebe argumentos (passagem de dados entre telas)
+      onGenerateRoute: (settings) {
+        if (settings.name == '/details') {
+          final product = settings.arguments as dynamic;
+          return MaterialPageRoute(
+            builder: (_) => ProductDetailPage(product: product),
+          );
+        }
+        return null;
+      },
     );
   }
 }

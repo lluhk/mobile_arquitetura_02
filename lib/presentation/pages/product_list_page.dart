@@ -1,5 +1,9 @@
 // presentation/pages/product_list_page.dart
-// Tela principal: lista de produtos com botão de favorito em cada item.
+//
+// Tela de listagem de produtos (Atividade 07).
+// Usa Navigator.push() para abrir a tela de detalhes ao tocar em um produto,
+// passando o objeto Product pelo construtor (passagem de dados entre telas —
+// PDF seção 7).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -31,10 +35,10 @@ class _ProductListPageState extends State<ProductListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Loja de Produtos'),
+        title: const Text('Produtos'),
         centerTitle: false,
         actions: [
-          // Botão de favoritos com contador (Atividade 05)
+          // Botão de favoritos com contador badge
           Consumer<FavoritesProvider>(
             builder: (_, fav, __) => Stack(
               alignment: Alignment.center,
@@ -42,10 +46,10 @@ class _ProductListPageState extends State<ProductListPage> {
                 IconButton(
                   icon: const Icon(Icons.favorite_border_rounded),
                   tooltip: 'Meus favoritos',
+                  // Navigator.push() para abrir FavoritesPage
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (_) => const FavoritesPage()),
+                    MaterialPageRoute(builder: (_) => const FavoritesPage()),
                   ),
                 ),
                 if (fav.favoriteCount > 0)
@@ -77,6 +81,7 @@ class _ProductListPageState extends State<ProductListPage> {
       ),
       body: Consumer<ProductProvider>(
         builder: (context, provider, _) {
+          // Estado: carregando
           if (provider.status == ProductStatus.loading) {
             return const Center(
               child: Column(
@@ -90,6 +95,7 @@ class _ProductListPageState extends State<ProductListPage> {
             );
           }
 
+          // Estado: erro
           if (provider.status == ProductStatus.error) {
             return ErrorView(
               error: provider.error,
@@ -100,22 +106,21 @@ class _ProductListPageState extends State<ProductListPage> {
 
           return Column(
             children: [
+              // Banner de cache offline
               if (provider.status == ProductStatus.stale)
                 CacheBanner(
                   age: provider.cacheAge,
-                  onRefresh: () =>
-                      provider.fetchProducts(forceRefresh: true),
+                  onRefresh: () => provider.fetchProducts(forceRefresh: true),
                 ),
+
               Expanded(
                 child: RefreshIndicator(
-                  onRefresh: () =>
-                      provider.fetchProducts(forceRefresh: true),
+                  onRefresh: () => provider.fetchProducts(forceRefresh: true),
                   child: Consumer<FavoritesProvider>(
                     builder: (context, fav, _) => ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: provider.products.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 10),
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final product = provider.products[index];
                         final originalIndex = fav.allProducts
@@ -125,6 +130,9 @@ class _ProductListPageState extends State<ProductListPage> {
                           isFavorite: product.favorite,
                           onFavoriteToggle: () =>
                               fav.toggleFavorite(originalIndex),
+                          // Ao tocar no produto: Navigator.push() passando
+                          // o produto pelo construtor da tela de detalhes
+                          // (passagem de dados — PDF seção 7.2)
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(

@@ -1,5 +1,8 @@
 // data/datasources/product_remote_datasource.dart
 // DataSource remoto — responsável exclusivamente por buscar dados da API.
+//
+// CORREÇÃO: migrado de fakestoreapi.com para dummyjson.com,
+// que possui CORS configurado corretamente para Flutter Web.
 
 import '../../core/errors/app_error.dart';
 import '../../core/network/http_client.dart';
@@ -11,7 +14,8 @@ abstract class ProductRemoteDataSource {
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
-  static const _baseUrl = 'https://fakestoreapi.com';
+  // dummyjson.com: API estável com CORS habilitado para Web
+  static const _baseUrl = 'https://dummyjson.com';
 
   final AppHttpClient _httpClient;
 
@@ -21,9 +25,14 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<List<ProductModel>> getProducts() async {
     try {
-      final data = await _httpClient.get('$_baseUrl/products');
-      if (data is! List) throw const ParseError();
-      return data
+      final data = await _httpClient.get('$_baseUrl/products?limit=30');
+
+      // dummyjson retorna { "products": [...], "total": ..., ... }
+      if (data is! Map<String, dynamic>) throw const ParseError();
+      final list = data['products'];
+      if (list is! List) throw const ParseError();
+
+      return list
           .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } on AppError {

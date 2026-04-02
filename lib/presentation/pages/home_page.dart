@@ -1,11 +1,5 @@
 // presentation/pages/home_page.dart
-//
 // Tela inicial — ponto de entrada da aplicação.
-// Conforme "Múltiplas Telas - Aula 1" (seção 14.6):
-// contém título, descrição e botão para acessar os produtos.
-//
-// Navegação feita com Navigator.push() + MaterialPageRoute (padrão)
-// e também com pushNamed() usando rotas nomeadas (desafio opcional).
 
 import 'package:flutter/material.dart';
 
@@ -24,14 +18,9 @@ class HomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                Icons.storefront_rounded,
-                size: 96,
-                color: theme.colorScheme.primary,
-              ),
+              Icon(Icons.storefront_rounded,
+                  size: 96, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
-
-              // Título
               Text(
                 'FakeStore',
                 textAlign: TextAlign.center,
@@ -41,11 +30,8 @@ class HomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Descrição
               Text(
-                'Explore nossa seleção de produtos com os melhores preços. '
-                'Clique abaixo para ver o catálogo completo.',
+                'Explore e gerencie produtos da FakeStore API.',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: Colors.grey.shade600,
@@ -54,18 +40,25 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 48),
 
-              // Botão principal — Navigator.push() (desafio: pushNamed)
+              // Listagem (somente leitura + favoritos)
               FilledButton.icon(
-                onPressed: () {
-                  // Desafio opcional: rota nomeada
-                  Navigator.pushNamed(context, '/products');
-                },
+                onPressed: () => Navigator.pushNamed(context, '/products'),
                 icon: const Icon(Icons.shopping_bag_outlined),
                 label: const Text('Ver Produtos'),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    textStyle: const TextStyle(fontSize: 16)),
+              ),
+              const SizedBox(height: 12),
+
+              // CRUD completo (Atividade 09)
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/crud'),
+                icon: const Icon(Icons.manage_search_rounded),
+                label: const Text('Gerenciar Produtos (CRUD)'),
+                style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    textStyle: const TextStyle(fontSize: 16)),
               ),
             ],
           ),

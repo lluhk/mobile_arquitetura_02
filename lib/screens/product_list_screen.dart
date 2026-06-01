@@ -16,7 +16,6 @@ import '../models/product.dart';
 import '../services/product_service.dart';
 import '../widgets/product_list_tile.dart';
 import 'product_form_screen.dart';
-import 'product_detail_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -256,11 +255,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
               final product = _products[index];
               return ProductListTile(
                 product: product,
-                onTap: () => Navigator.push(
+                onTap: () => Navigator.pushNamed(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => ProductDetailScreen(product: product),
-                  ),
+                  '/products/${product.id}',
+                  arguments: product,
                 ),
                 onEdit: () => _navigateToEdit(product),
                 onDelete: () => _confirmDelete(product),

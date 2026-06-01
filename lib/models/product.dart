@@ -1,11 +1,11 @@
 // models/product.dart
 //
-// Modelo de produto para o CRUD (Atividade 09).
-// Inclui fromJson e toJson para comunicação com a API.
+// Modelo de produto para o CRUD.
 // O campo id é nullable pois produtos novos ainda não têm id atribuído.
 //
-// CORREÇÃO: ajustado para o schema da dummyjson.com.
-// "image" → "thumbnail" (campo de imagem principal da dummyjson)
+// CORREÇÃO: toJson() agora manda "thumbnail" em vez de "image",
+// alinhando com o schema da DummyJSON. fromJson() lê "thumbnail"
+// com fallback para "image" por compatibilidade.
 
 class Product {
   final int? id;
@@ -31,7 +31,7 @@ class Product {
       price: (json['price'] as num).toDouble(),
       description: json['description'] as String? ?? '',
       category: json['category'] as String? ?? '',
-      // dummyjson usa "thumbnail"; fallback para "image" por compatibilidade
+      // DummyJSON usa "thumbnail"; fallback para "image" por compatibilidade
       image: json['thumbnail'] as String? ?? json['image'] as String? ?? '',
     );
   }
@@ -43,11 +43,10 @@ class Product {
       'price': price,
       'description': description,
       'category': category,
-      'image': image,
+      'thumbnail': image, // DummyJSON espera "thumbnail", não "image"
     };
   }
 
-  // Cria uma cópia com campos alterados (usado na edição)
   Product copyWith({
     int? id,
     String? title,

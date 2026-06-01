@@ -1,21 +1,67 @@
 // screens/product_detail_screen.dart
 //
 // Tela de detalhes do produto.
-// Recebe o Product via construtor e, opcionalmente, busca os dados
-// atualizados via GET /products/{id}.
+// Recebe o Product como argumento inicial e chama GET /products/{id}
+// para buscar os dados atualizados da API. (Requisito 11)
 
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import 'product_form_screen.dart';
 import '../services/product_service.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
   const ProductDetailScreen({super.key, required this.product});
 
   @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  late Future<Product> _productFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  void _load() {
+    final id = widget.product.id;
+    if (id != null && id <= 194) {
+      // ID real — busca dados atualizados via GET /products/{id}
+      _productFuture = ProductService().fetchById(id);
+    } else {
+      // ID local (produto criado pelo usuário) — usa o objeto da lista
+      _productFuture = Future.value(widget.product);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    return FutureBuilder<Product>(
+      future: _productFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.product.category,
+                style: const TextStyle(fontSize: 14))),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          // Fallback: exibe os dados que já vieram da lista
+          return _buildScaffold(context, widget.product);
+        }
+
+        return _buildScaffold(context, snapshot.data!);
+      },
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, Product product) {
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -53,7 +99,6 @@ class ProductDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Imagem
             Container(
               color: Colors.white,
               height: 260,
@@ -68,7 +113,6 @@ class ProductDetailScreen extends StatelessWidget {
                     const Icon(Icons.broken_image_outlined, size: 64),
               ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(

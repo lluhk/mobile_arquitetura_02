@@ -4,9 +4,10 @@
 // Fluxo geral:
 //   1. Inicializa AuthSession (carrega sessão salva com shared_preferences)
 //   2. SplashScreen verifica sessão → /login ou /products
-//   3. /login  → LoginScreen   (pública)
-//   4. /products → ProductListScreen (protegida, exige sessão)
-//   5. /profile  → ProfileScreen (protegida, exibe /auth/me)
+//   3. /login     → LoginScreen   (pública)
+//   4. /products  → ProductListScreen (protegida, exige sessão)
+//   5. /products/:id → ProductDetailScreen (protegida, exige sessão)
+//   6. /profile   → ProfileScreen (protegida, exibe /auth/me)
 //
 // API utilizada: https://dummyjson.com
 
@@ -20,6 +21,7 @@ import 'auth/screens/profile_screen.dart';
 import 'screens/product_list_screen.dart';
 import 'screens/product_detail_screen.dart';
 import 'models/product.dart';
+import 'services/product_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,37 +50,82 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
       ),
-      // Inicia pelo splash que decide para onde ir
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
-        '/products': (context) => _authGuard(context, const ProductListScreen()),
-        '/profile': (context) => _authGuard(context, const ProfileScreen()),
+        '/products': (context) => const _AuthGuard(child: ProductListScreen()),
+        '/profile': (context) => const _AuthGuard(child: ProfileScreen()),
       },
       onGenerateRoute: (settings) {
-        // Rota de detalhes recebe Product como argumento
+        // Rota /products/:id  — Requisito 11
+        final uri = Uri.tryParse(settings.name ?? '');
+        if (uri != null &&
+            uri.pathSegments.length == 2 &&
+            uri.pathSegments[0] == 'products') {
+          final idStr = uri.pathSegments[1];
+          final id = int.tryParse(idStr);
+          if (id != null) {
+            // Pode receber Product pronto como argumento (otimista)
+            // ou buscar via fetchById se vier apenas o id.
+            final product = settings.arguments is Product
+                ? settings.arguments as Product
+                : null;
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => _AuthGuard(
+                child: ProductDetailScreen(
+                  product: product ?? Product(
+                    id: id,
+                    title: '',
+                    price: 0,
+                    description: '',
+                    category: '',
+                    image: '',
+                  ),
+                ),
+              ),
+            );
+          }
+        }
+
+        // Rota legada /details (mantida por compatibilidade)
         if (settings.name == '/details') {
           final product = settings.arguments as Product;
           return MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(product: product),
+            builder: (_) => _AuthGuard(child: ProductDetailScreen(product: product)),
           );
         }
+
         return null;
       },
     );
   }
+}
 
-  /// Guard simples: se não há sessão ativa, redireciona para /login.
-  Widget _authGuard(BuildContext context, Widget child) {
-    final session = context.read<AuthSession>();
-    if (!session.isLoggedIn) {
-      // Agenda o redirecionamento após o frame atual
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/login');
-      });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    return child;
+/// Guard que protege rotas autenticadas.
+/// Usa [Consumer] para reagir reativamente ao estado da sessão,
+/// garantindo que a verificação acontece após o [AuthSession.init()].
+class _AuthGuard extends StatelessWidget {
+  final Widget child;
+  const _AuthGuard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthSession>(
+      builder: (context, session, _) {
+        if (!session.isLoggedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              Navigator.pushReplacementNamed(context, '/login');
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        return child;
+      },
+    );
   }
 }

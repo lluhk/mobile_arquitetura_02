@@ -1,7 +1,8 @@
 // screens/product_detail_screen.dart
 //
-// Tela de detalhes do produto selecionado na listagem.
-// Recebe o objeto Product via construtor e exibe todas as informações.
+// Tela de detalhes do produto.
+// Recebe o Product via construtor e, opcionalmente, busca os dados
+// atualizados via GET /products/{id}.
 
 import 'package:flutter/material.dart';
 import '../models/product.dart';
@@ -19,10 +20,8 @@ class ProductDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(product.category,
-            style: const TextStyle(fontSize: 14)),
+        title: Text(product.category, style: const TextStyle(fontSize: 14)),
         actions: [
-          // Botão de edição direto da tela de detalhes
           IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Editar',
@@ -54,7 +53,7 @@ class ProductDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Imagem do produto
+            // Imagem
             Container(
               color: Colors.white,
               height: 260,
@@ -75,15 +74,12 @@ class ProductDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
                   Text(
                     product.title,
                     style: theme.textTheme.titleLarge
                         ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-
-                  // Preço
                   Text(
                     'R\$ ${product.price.toStringAsFixed(2)}',
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -92,16 +88,11 @@ class ProductDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Categoria
                   Chip(
                     label: Text(product.category),
-                    backgroundColor:
-                        theme.colorScheme.secondaryContainer,
+                    backgroundColor: theme.colorScheme.secondaryContainer,
                   ),
                   const SizedBox(height: 20),
-
-                  // Descrição
                   Text(
                     'Descrição',
                     style: theme.textTheme.titleMedium
@@ -114,8 +105,6 @@ class ProductDetailScreen extends StatelessWidget {
                         color: Colors.grey.shade700, height: 1.6),
                   ),
                   const SizedBox(height: 32),
-
-                  // Botão voltar à lista
                   OutlinedButton.icon(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back_rounded),

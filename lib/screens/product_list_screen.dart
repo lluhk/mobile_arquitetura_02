@@ -1,10 +1,17 @@
 // screens/product_list_screen.dart
 //
-// Tela de listagem dos produtos com CRUD completo.
-// Usa FutureBuilder para o carregamento inicial e setState para
-// refletir as operações de criação, edição e exclusão em tempo real.
+// Tela principal de produtos — substituída para:
+//   - Exibir o nome do usuário autenticado no AppBar (Desafio Extra — item 3)
+//   - Exibir a foto do usuário no AppBar (Desafio Extra — item 3)
+//   - Botão de logout
+//   - Listagem via DummyJSON /products
+//   - Botão para atualizar manualmente a lista (Desafio Extra — item 6)
+//
+// Esta tela só é acessível após login (proteção feita pelo roteamento em main.dart).
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../auth/session/auth_session.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../widgets/product_list_tile.dart';
@@ -31,7 +38,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _loadProducts() {
     _productsFuture = _service.fetchProducts().then((list) {
-      setState(() => _products = list);
+      if (mounted) setState(() => _products = list);
       return list;
     });
   }
@@ -60,9 +67,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Future<void> _navigateToEdit(Product product) async {
     final updated = await Navigator.push<Product>(
       context,
-      MaterialPageRoute(
-        builder: (_) => ProductFormScreen(product: product),
-      ),
+      MaterialPageRoute(builder: (_) => ProductFormScreen(product: product)),
     );
 
     if (updated != null) {
@@ -123,26 +128,87 @@ class _ProductListScreenState extends State<ProductListScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Deseja encerrar a sessão?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await context.read<AuthSession>().logout();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      }
+    }
+  }
+
   // ── UI ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    final session = context.watch<AuthSession>();
+    final user = session.currentUser;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Produtos'),
+        title: user != null
+            ? Text('Olá, ${user.firstName}!')
+            : const Text('Produtos'),
         centerTitle: false,
+        // Desafio Extra item 3: foto do usuário no AppBar
         actions: [
+          // Botão atualizar lista (Desafio Extra — item 6)
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Recarregar',
+            tooltip: 'Atualizar lista',
             onPressed: () => setState(_loadProducts),
+          ),
+          // Avatar / perfil
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/profile'),
+                child: Tooltip(
+                  message: 'Ver perfil',
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    backgroundImage: user.image.isNotEmpty
+                        ? NetworkImage(user.image)
+                        : null,
+                    child: user.image.isEmpty
+                        ? const Icon(Icons.person, size: 18)
+                        : null,
+                  ),
+                ),
+              ),
+            ),
+          // Botão logout
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sair',
+            onPressed: _logout,
           ),
         ],
       ),
       body: FutureBuilder<List<Product>>(
         future: _productsFuture,
         builder: (context, snapshot) {
-          // Estado: carregando
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: Column(
@@ -156,7 +222,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
             );
           }
 
-          // Estado: erro
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -165,8 +230,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   const Icon(Icons.wifi_off_rounded,
                       size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text('Erro ao carregar produtos.\n${snapshot.error}',
-                      textAlign: TextAlign.center),
+                  Text(
+                    'Erro ao carregar produtos.\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
                     onPressed: () => setState(_loadProducts),
@@ -178,12 +245,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             );
           }
 
-          // Estado: lista vazia
           if (_products.isEmpty) {
             return const Center(child: Text('Nenhum produto encontrado.'));
           }
 
-          // Estado: lista carregada
           return ListView.builder(
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _products.length,
@@ -194,8 +259,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        ProductDetailScreen(product: product),
+                    builder: (_) => ProductDetailScreen(product: product),
                   ),
                 ),
                 onEdit: () => _navigateToEdit(product),
@@ -205,7 +269,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
           );
         },
       ),
-      // FAB para criar novo produto
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToCreate,
         icon: const Icon(Icons.add_rounded),
